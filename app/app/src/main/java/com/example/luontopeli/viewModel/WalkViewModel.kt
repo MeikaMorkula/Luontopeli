@@ -1,4 +1,4 @@
-package com.example.luontopeli.viewModel
+package com.example.luontopeli.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
