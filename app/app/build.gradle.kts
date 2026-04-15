@@ -1,12 +1,3 @@
-import java.util.Properties
-import java.io.FileInputStream
-
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(FileInputStream(localPropertiesFile))
-}
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -25,50 +16,19 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // Signing config luodaan vain jos KEYSTORE_PATH on määritetty
-    val keystorePath = localProperties.getProperty("KEYSTORE_PATH")
-    if (!keystorePath.isNullOrBlank()) {
-        signingConfigs {
-            create("release") {
-                storeFile = file(keystorePath)
-                storePassword = localProperties.getProperty("KEYSTORE_PASSWORD") ?: ""
-                keyAlias = localProperties.getProperty("KEY_ALIAS") ?: ""
-                keyPassword = localProperties.getProperty("KEY_PASSWORD") ?: ""
-            }
-        }
-    }
-
-    buildTypes {
-        release {
-            if (!keystorePath.isNullOrBlank()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
-            isMinifyEnabled = false
-            isShrinkResources = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-        debug {
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
-        }
+    buildFeatures {
+        compose = true
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions {
-        jvmTarget = "11"
-    }
-    buildFeatures {
-        compose = true
+        jvmTarget = "17"
     }
 }
 
@@ -76,11 +36,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.foundation.layout)
-    implementation(libs.androidx.benchmark.traceprocessor)
-    implementation(libs.androidx.material3)
 
-    // Compose BOM
+    // Compose BOM — hallitsee Compose-kirjastojen versiot automaattisesti
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
     implementation(libs.androidx.compose.ui)
@@ -92,44 +49,61 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // Firebase BOM (hallitsee versiot)
+    implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
+
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth-ktx")
+
+    // Firebase Firestore
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // Firebase Storage
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // Kotlin Coroutines support for Tasks (await)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+    implementation("com.squareup:javapoet:1.13.0")
+
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    hilt {
+        enableAggregatingTask = false
+    }
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    // Hilt
+    // Hilt (riippuvuusinjektio)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    // OpenStreetMap
+    // OpenStreetMap — kartat ilman API-avainta (lisätään viikolla 3)
     implementation(libs.osmdroid.android)
 
-    // CameraX
+    // CameraX (lisätään viikolla 4)
     implementation(libs.camera.core)
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.view)
     implementation(libs.camera.extensions)
 
-    // Coil
+    // Coil — kuvan lataus (lisätään viikolla 4)
     implementation(libs.coil.compose)
 
-    // ML Kit
+    // ML Kit — kasvintunnistus (lisätään viikolla 5)
     implementation(libs.mlkit.image.labeling)
 
-    // Splash Screen
+    // Splash Screen (lisätään viikolla 7)
     implementation(libs.androidx.core.splashscreen)
 
-    // Accompanist Permissions
+    // Accompanist Permissions — ajonaikaiset luvat (lisätään viikolla 2–3)
     implementation(libs.accompanist.permissions)
 
-    // Test
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(composeBom)
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    //debugImplementation(libs.androidx.compose.ui.tooling)
+    testImplementation(kotlin("test"))
 }

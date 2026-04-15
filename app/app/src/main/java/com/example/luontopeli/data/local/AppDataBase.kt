@@ -21,7 +21,7 @@ import com.example.luontopeli.data.local.entity.WalkSession
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun natureSpotDao(): NatureSpotDao
-    /
+
     abstract fun walkSessionDao(): WalkSessionDao
 
     companion object {

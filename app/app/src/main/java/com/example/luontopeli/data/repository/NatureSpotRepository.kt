@@ -14,23 +14,36 @@ class NatureSpotRepository(
     private val storageManager: StorageManager,
     private val authManager: AuthManager
 ) {
-    /** Flow-virta kaikista luontolöydöistä aikajärjestyksessä (uusin ensin) */
     val allSpots: Flow<List<NatureSpot>> = dao.getAllSpots()
 
-    val spotsWithLocation: Flow<List<NatureSpot>> = dao.getSpotsWithLocation()
-
-
     suspend fun insertSpot(spot: NatureSpot) {
-        val spotWithUser = spot.copy(userId = authManager.currentUserId, synced = true)
-        dao.insert(spotWithUser)
+        val spotWithUser = spot.copy(userId = authManager.currentUserId)
+
+        dao.insert(spotWithUser.copy(synced = false))
+
+        syncSpotToFirebase(spotWithUser)
     }
 
-    suspend fun deleteSpot(spot: NatureSpot) {
-        dao.delete(spot)
+    private suspend fun syncSpotToFirebase(spot: NatureSpot) {
+        try {
+            val firebaseImageUrl = spot.imageLocalPath?.let { localPath ->
+                storageManager.uploadImage(localPath, spot.id).getOrNull()
+            }
+
+            val spotWithUrl = spot.copy(imageFirebaseUrl = firebaseImageUrl)
+            firestoreManager.saveSpot(spotWithUrl).getOrThrow()
+
+
+            dao.markSynced(spot.id, firebaseImageUrl ?: "")
+        } catch (e: Exception) {
+
+        }
     }
 
-
-    suspend fun getUnsyncedSpots(): List<NatureSpot> {
-        return dao.getUnsyncedSpots()
+    suspend fun syncPendingSpots() {
+        val unsyncedSpots = dao.getUnsyncedSpots()
+        unsyncedSpots.forEach { spot ->
+            syncSpotToFirebase(spot)
+        }
     }
 }

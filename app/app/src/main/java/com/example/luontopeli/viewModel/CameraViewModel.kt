@@ -1,5 +1,6 @@
 package com.example.luontopeli.viewmodel
 
+
 import android.content.Context
 import android.net.Uri
 import android.app.Application
@@ -37,31 +38,27 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         authManager = AuthManager()
     )
 
-
     private val classifier = PlantClassifier()
 
     private val _capturedImagePath = MutableStateFlow<String?>(null)
     val capturedImagePath: StateFlow<String?> = _capturedImagePath.asStateFlow()
+
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _classificationResult = MutableStateFlow<ClassificationResult?>(null)
     val classificationResult: StateFlow<ClassificationResult?> = _classificationResult.asStateFlow()
-
     var currentLatitude: Double = 0.0
     var currentLongitude: Double = 0.0
-
 
     fun takePhoto(context: Context, imageCapture: ImageCapture) {
         _isLoading.value = true
 
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
             .format(Date())
-
         val outputDir = File(context.filesDir, "nature_photos").also { it.mkdirs() }
         val outputFile = File(outputDir, "IMG_${timestamp}.jpg")
-
         val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile).build()
 
         imageCapture.takePicture(
@@ -69,9 +66,11 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
             ContextCompat.getMainExecutor(context),
             object : ImageCapture.OnImageSavedCallback {
 
+                /** Kuva tallennettu onnistuneesti – käynnistä ML Kit -tunnistus */
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     _capturedImagePath.value = outputFile.absolutePath
 
+                    // Tunnista kasvi kuvasta ML Kit:n avulla
                     viewModelScope.launch {
                         try {
                             val uri = Uri.fromFile(outputFile)
@@ -85,6 +84,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
                     }
                 }
 
+                /** Kuvan otto epäonnistui (esim. kameravirhe) */
                 override fun onError(exception: ImageCaptureException) {
                     _isLoading.value = false
                 }
@@ -92,13 +92,10 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         )
     }
 
-
-    fun clearCapturedImage() {
-        _capturedImagePath.value = null
-        _classificationResult.value = null
-    }
-
-
+    /**
+     * Tallentaa nykyisen luontolöydön Room-tietokantaan.
+     * Luo NatureSpot-entiteetin tunnistustuloksen perusteella.
+     */
     fun saveCurrentSpot() {
         val imagePath = _capturedImagePath.value ?: return
         viewModelScope.launch {
@@ -119,6 +116,10 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
             repository.insertSpot(spot)
             clearCapturedImage()
         }
+    }
+    fun clearCapturedImage() {
+        _capturedImagePath.value = null
+        _classificationResult.value = null
     }
 
     override fun onCleared() {
