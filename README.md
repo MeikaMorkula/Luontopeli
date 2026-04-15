@@ -3,7 +3,7 @@
 
  Tein projektin hyvin pitkälti esimerkkikoodien mukaan joten pitäisi olla 70 pisteen perussuoritus.
  Firebase tunnuksia en kyennyt tekemään joten pilveen tallentaminen ei toimi.
-
+Jouduin vaihtamaan projektin Java version 21->17 koska android studio ei muuten suostunut tekemään yhteistyötä
 
 
 
